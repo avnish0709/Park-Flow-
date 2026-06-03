@@ -250,3 +250,69 @@ Response:
   "values": [1770, 2360, ...]
 }
 ```
+
+---
+
+## Database Schema (SQL)
+
+### Users Table 
+```Bash
+CREATE TABLE users(
+  id INTEGER PRIMARY KEY,
+  email TEXT UNIQUE,
+  password TEXT,
+  role TEXT,
+  name TEXT
+)
+```
+
+### Session Table 
+```Bash
+CREATE TABLE sessions(
+  token TEXT PRIMARY KEY,
+  user_id INTEGER,
+  created_at TEXT
+)
+```
+
+### Slots Table
+
+```Bash
+CREATE TABLE slots(
+  id INTEGER PRIMARY KEY,
+  floor INTEGER,
+  pillar TEXT,
+  slot_num INTEGER,
+  reserved INTEGER DEFAULT 0,
+  vehicle TEXT,
+  reserved_at TEXT,
+  ticket TEXT,
+  UNIQUE(floor, pillar, slot_num)
+)
+```
+
+### Tickets Table
+```Bash
+CREATE TABLE tickets(
+  id INTEGER PRIMARY KEY,
+  ticket TEXT UNIQUE,
+  floor INTEGER,
+  pillar TEXT,
+  slot_num INTEGER,
+  vehicle TEXT,
+  base REAL,
+  gst REAL,
+  total REAL,
+  payment TEXT,
+  created_at TEXT
+)
+```
+
+### Configuration Table 
+```Bash
+CREATE TABLE config(
+  id INTEGER PRIMARY KEY,
+  slots_per_floor INTEGER,
+  floors INTEGER
+)
+```
