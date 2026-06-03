@@ -147,13 +147,13 @@ python3 app.py
 ```
 - Access the Application
   - Main Portal: http://localhost:5000
-  - http://localhost:5000/docs
+  - API Docs: http://localhost:5000/docs
 
 ---
 
 ## API Documentation
 
-- Authentication Endpoints
+### 1) Authentication Endpoints
 - Login
 
 ```bash
@@ -170,5 +170,83 @@ Response:
   "token": "auth_token_here",
   "role": "supervisor",
   "name": "Rajesh Kumar"
+}
+```
+### 2) Parking Slot Endpoint 
+
+- 1) Get All Slots
+  
+```bash
+GET /api/slots
+Authorization: Bearer {token}
+
+Response:
+{
+  "slots": [
+    {
+      "id": 1,
+      "floor": -1,
+      "pillar": "A",
+      "slot_num": 1,
+      "reserved": 0,
+      "vehicle": null,
+      "reserved_at": null,
+      "ticket": null
+    }
+  ]
+}
+```
+
+
+- 2) Reserve a Slot 
+
+```bash
+POST /api/reserve
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "floor": -1,
+  "pillar": "A",
+  "slot_num": 1,
+  "vehicle": "KA01AB1234"
+}
+
+Response:
+{
+  "ok": true,
+  "ticket": {
+    "ticket": "MP-12345",
+    "payment": "PAY-1234",
+    "total": 118
+  }
+}
+```
+
+- 3) Release a Slot 
+
+```Bash
+POST /api/release
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "floor": -1,
+  "pillar": "A",
+  "slot_num": 1
+}
+```
+
+### Ticket Endpoints 
+
+- 7-Day Income Report (Supervisor Only)
+```Bash
+GET /api/stats/income
+Authorization: Bearer {token}
+
+Response:
+{
+  "labels": ["27 May", "28 May", ...],
+  "values": [1770, 2360, ...]
 }
 ```
