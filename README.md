@@ -253,7 +253,7 @@ Response:
 
 ---
 
-## Database Schema (SQL)
+## Database Schema (SQLite)
 
 ### Users Table 
 ```Bash
@@ -322,9 +322,15 @@ CREATE TABLE config(
   - View comprehensive dashboards with all statistics
   - Monitor daily parking and revenue
   - Access 7-day income analytics
+    <img width="1517" height="815" alt="PS-1" src="https://github.com/user-attachments/assets/2de868bb-5411-41db-9071-5241ac95d1c0" />
   - View all tickets and parking history
+  - <img width="1521" height="527" alt="PS-2" src="https://github.com/user-attachments/assets/3a6f8fa9-729e-4c01-967d-4191a8eca76c" />
   - Generate reports
   - Permissions: Can clear/reserve slots
+    <img width="293" height="157" alt="PS-3" src="https://github.com/user-attachments/assets/799dc1d4-7843-4faf-b103-6ce6b5604b11" />
+    <img width="1517" height="392" alt="PS-5" src="https://github.com/user-attachments/assets/b482ef85-86e4-4f5a-9b6b-489764b28414" />
+    <img width="291" height="157" alt="PS-4" src="https://github.com/user-attachments/assets/e3fb10af-43f6-478d-a399-00801b562411" />
+    <img width="1518" height="345" alt="PS-6" src="https://github.com/user-attachments/assets/94caf5a9-4f85-41b6-a9fc-f02b188330ca" />
   - View all the data
 
 ### Parking Officer
@@ -334,12 +340,26 @@ CREATE TABLE config(
   - Access parking lot overview
   - Permissions: View-only
 
+    <img width="1276" height="717" alt="image" src="https://github.com/user-attachments/assets/5d9c2f51-3c04-42f7-9b6c-8cb85c7dc455" />
+    <img width="1536" height="861" alt="PO-1" src="https://github.com/user-attachments/assets/0f663af1-7a93-48f7-9fb4-a0cf2746f91b" />
+
   ### Parking Lot Attendant
   - Manage slot reservations
   - Release parked vehicles
+    <img width="1532" height="864" alt="PLA-1" src="https://github.com/user-attachments/assets/ffd48ef1-949e-4e77-ad18-d2e91bdb5b99" />
+
   - Configure parking lot layout
-  - Create tickets and manage payments
   - Adjust slots per floor and number of floors
+    <img width="1108" height="607" alt="PLA-2" src="https://github.com/user-attachments/assets/4a3f902a-6d45-43ee-9d21-09657b807383" />
+    <img width="1139" height="532" alt="PLA-3" src="https://github.com/user-attachments/assets/85253fec-a879-46da-a9c6-65a0ea644bd4" />
+  - Create tickets and manage payments
   - Permissions: Full slot management and configuration
-    
 ---
+
+## Pricing Model 
+- Base Rate: ₹100 per parking session
+- GST (18%): Automatically calculated
+- Total: Base + GST
+  
+<img width="523" height="864" alt="Screenshot 2026-06-04 154507" src="https://github.com/user-attachments/assets/4a290ecc-144b-4818-b614-dc246bb3e5a7" />
+
