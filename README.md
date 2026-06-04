@@ -246,7 +246,7 @@ Authorization: Bearer {token}
 
 Response:
 {
-  "labels": ["27 May", "28 May", ...],
+  "labels": ["29 May", "30 May", ...],
   "values": [1770, 2360, ...]
 }
 ```
