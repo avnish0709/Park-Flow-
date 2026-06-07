@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Officer — Mall Park 360</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{
+  --bg:#0A0C12;--surface:#12151E;--surface2:#181B26;
+  --border:#1E2230;--gold:#FFB800;--gold2:#FF8C00;
+  --teal:#00C9A7;--red:#FF4455;--green:#00D68F;
+  --text:#E8EAF0;--muted:#6B7280;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,201,167,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,201,167,.015) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,12,18,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo-pill{display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:1.5px;color:var(--text);text-decoration:none;}
+.logo-pill .icon{width:28px;height:28px;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#000;font-weight:700;}
+.role-tag{background:rgba(0,201,167,.15);color:var(--teal);font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.user-info{font-size:13px;color:var(--muted);}
+.btn-logout{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
+
+.main{padding:24px;max-width:1400px;margin:0 auto;}
+.page-title{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;letter-spacing:1px;margin-bottom:4px;}
+.page-title span{color:var(--teal);}
+.page-subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
+.stat-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.stat-value{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;}
+.sc-total .stat-value{color:var(--text);}
+.sc-reserved .stat-value{color:var(--red);}
+.sc-free .stat-value{color:var(--green);}
+.sc-pct .stat-value{color:var(--teal);}
+
+/* LEGEND */
+.legend-bar{
+  display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:12px 16px;
+}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.ld-available{background:rgba(0,214,143,.3);border:1.5px solid rgba(0,214,143,.5);}
+.ld-reserved{background:rgba(255,68,85,.2);border:1.5px solid rgba(255,68,85,.4);}
+.ld-lift{background:rgba(0,201,167,.15);border:1.5px dashed rgba(0,201,167,.5);}
+.legend-item strong{color:var(--text);}
+
+/* FLOOR TABS */
+.floor-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.floor-tab{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:8px 18px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;color:var(--muted);}
+.floor-tab.active{border-color:var(--teal);color:var(--teal);background:rgba(0,201,167,.08);}
+.floor-tab:hover:not(.active){border-color:rgba(0,201,167,.3);color:var(--text);}
+
+.floor-container{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;overflow-x:auto;}
+.parking-grid{min-width:600px;}
+.lift-row{display:flex;justify-content:space-between;margin-bottom:8px;}
+.lift-box{background:rgba(0,201,167,.1);border:1.5px dashed rgba(0,201,167,.4);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:6px;}
+.pillar-row{display:flex;align-items:center;margin-bottom:6px;gap:4px;}
+.pillar-label-cell{width:38px;text-align:center;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:1px;flex-shrink:0;}
+.pillar-divider{width:44px;flex-shrink:0;text-align:center;background:rgba(0,201,167,.05);border:1px solid rgba(0,201,167,.1);border-radius:6px;padding:6px 4px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:rgba(0,201,167,.4);}
+.slot-cell{flex:1;min-width:48px;max-width:70px;background:rgba(0,214,143,.08);border:1.5px solid rgba(0,214,143,.25);border-radius:6px;padding:6px 4px;text-align:center;transition:all .18s;cursor:default;}
+.slot-cell.reserved{background:rgba(255,68,85,.1);border-color:rgba(255,68,85,.35);}
+.slot-cell .slot-num{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--green);}
+.slot-cell.reserved .slot-num{color:var(--red);}
+.slot-cell .slot-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin:2px auto 0;}
+.slot-cell.reserved .slot-dot{background:var(--red);}
+.slot-cell .slot-vehicle{font-size:9px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.slots-left,.slots-right{display:flex;gap:4px;flex:1;}
+.slots-right{justify-content:flex-end;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .icon{font-size:48px;margin-bottom:12px;}
+
+/* Read-only badge */
+.ro-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.25);
+  border-radius:6px;padding:4px 12px;
+  font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--teal);margin-bottom:12px;
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo-pill">
+      <span class="icon">🅿</span>MALL PARK <span style="color:var(--gold)">360</span>
+    </a>
+    <span class="role-tag">🚔 Officer</span>
+  </div>
+  <div class="topbar-right">
+    <span class="live-dot"></span>
+    <span class="user-info" id="userName">Loading…</span>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-title">Parking <span>Officer</span></div>
+  <div class="page-subtitle">
+    <span class="live-dot"></span>Real-time slot monitoring — view only
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card sc-total">
+      <div class="stat-label">Total Slots</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card sc-reserved">
+      <div class="stat-label">Reserved</div>
+      <div class="stat-value" id="statReserved">—</div>
+    </div>
+    <div class="stat-card sc-free">
+      <div class="stat-label">Available</div>
+      <div class="stat-value" id="statFree">—</div>
+    </div>
+    <div class="stat-card sc-pct">
+      <div class="stat-label">Occupancy</div>
+      <div class="stat-value" id="statPct">—%</div>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend-bar">
+    <div class="legend-item"><div class="legend-dot ld-available"></div><strong>Available</strong> — Ready for parking</div>
+    <div class="legend-item"><div class="legend-dot ld-reserved"></div><strong>Reserved</strong> — Occupied by vehicle</div>
+    <div class="legend-item"><div class="legend-dot ld-lift"></div><strong>Lift</strong> — Floor elevator</div>
+  </div>
+
+  <div class="ro-badge">👁 Read-Only Live View</div>
+
+  <!-- FLOOR TABS -->
+  <div class="floor-tabs" id="floorTabs"></div>
+
+  <!-- FLOOR VIEW -->
+  <div class="floor-container" id="floorContainer">
+    <div class="empty-state">
+      <div class="icon">⏳</div>
+      <p>Waiting for attendant to configure parking slots</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN=localStorage.getItem('mp360_token');
+const ROLE=localStorage.getItem('mp360_role');
+if(!TOKEN||ROLE!=='officer'){ window.location.href='/'; }
+
+let allSlots=[], config={}, activeFloor=null;
+
+const socket=io();
+socket.on('init', d=>{ allSlots=d.slots; config=d.config; refresh(); });
+socket.on('slot_update', d=>{ allSlots=d.slots; refreshGrid(); updateStats(); });
+socket.on('config_update', d=>{ allSlots=d.slots; config=d.config; refresh(); });
+
+async function apiFetch(url){
+  try{
+    const r=await fetch(url,{headers:{'Authorization':'Bearer '+TOKEN}});
+    return await r.json();
+  }catch(e){return null;}
+}
+async function loadUser(){
+  const r=await apiFetch('/api/me');
+  if(r) document.getElementById('userName').textContent=r.name;
+}
+function logout(){ fetch('/api/logout',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN}}); localStorage.clear(); window.location.href='/'; }
+
+function refresh(){
+  updateStats();
+  buildFloorTabs();
+  if(!activeFloor && config.num_floors>0) activeFloor=-1;
+  refreshGrid();
+}
+
+function updateStats(){
+  const total=allSlots.length;
+  const reserved=allSlots.filter(s=>s.is_reserved).length;
+  const pct=total>0?Math.round(reserved/total*100):0;
+  document.getElementById('statTotal').textContent=total||'—';
+  document.getElementById('statReserved').textContent=reserved||(total?'0':'—');
+  document.getElementById('statFree').textContent=(total-reserved)||(total?'0':'—');
+  document.getElementById('statPct').textContent=total?pct+'%':'—%';
+}
+
+function buildFloorTabs(){
+  const el=document.getElementById('floorTabs');
+  el.innerHTML='';
+  for(let f=1;f<=config.num_floors;f++){
+    const floor=-f;
+    const btn=document.createElement('button');
+    btn.className='floor-tab'+(activeFloor===floor?' active':'');
+    btn.textContent=`B${f} (Floor ${floor})`;
+    btn.onclick=()=>{ activeFloor=floor; buildFloorTabs(); refreshGrid(); };
+    el.appendChild(btn);
+  }
+}
+
+function refreshGrid(){
+  if(!config.num_floors||allSlots.length===0){
+    document.getElementById('floorContainer').innerHTML=
+      '<div class="empty-state"><div class="icon">⏳</div><p>Waiting for attendant to configure parking slots</p></div>';
+    return;
+  }
+  if(!activeFloor) activeFloor=-1;
+  const floorSlots=allSlots.filter(s=>s.floor===activeFloor);
+  const pillars=[...new Set(floorSlots.map(s=>s.pillar))].sort();
+  const fi=Math.abs(activeFloor);
+  let html=`<div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:14px;">BASEMENT ${fi} &nbsp;|&nbsp; FLOOR ${activeFloor}</div>`;
+  html+=`<div class="parking-grid">`;
+  html+=`<div class="lift-row"><div class="lift-box">🛗 Lift A</div><div class="lift-box">Lift B 🛗</div></div>`;
+  for(const p of pillars){
+    const ps=floorSlots.filter(s=>s.pillar===p).sort((a,b)=>a.slot_num-b.slot_num);
+    const L=ps.slice(0,5), R=ps.slice(5,10);
+    html+=`<div class="pillar-row">
+      <div class="pillar-label-cell">${p}</div>
+      <div class="slots-left">${L.map(s=>slotCell(s)).join('')}</div>
+      <div class="pillar-divider">█ ${p}</div>
+      <div class="slots-right">${R.map(s=>slotCell(s)).join('')}</div>
+    </div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('floorContainer').innerHTML=html;
+}
+
+function slotCell(s){
+  const cls=s.is_reserved?'slot-cell reserved':'slot-cell';
+  const veh=s.vehicle_last4?`****${s.vehicle_last4}`:'';
+  return `<div class="${cls}" title="${s.is_reserved?'Reserved '+veh:'Available'}">
+    <div class="slot-num">${String(s.slot_num).padStart(2,'0')}</div>
+    <div class="slot-dot"></div>
+    <div class="slot-vehicle">${veh}</div>
+  </div>`;
+}
+
+loadUser();
+apiFetch('/api/parking/slots').then(d=>{ if(d){ allSlots=d.slots; config=d.config; refresh(); } });
+</script>
+</body>
+</html>

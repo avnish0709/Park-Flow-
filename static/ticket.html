@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking Ticket — Mall Park 360</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FFB800;--gold2:#FF8C00;--text:#111;--muted:#666;
+  --border:#E0E0E0;--light:#F8F8F8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#E8E8E8;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:30px 16px;
+}
+
+/* Screen-only top actions */
+.screen-actions{
+  width:100%;max-width:420px;
+  display:flex;gap:10px;margin-bottom:20px;
+}
+.btn-print{
+  flex:1;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:10px;padding:12px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:1px;color:#000;cursor:pointer;
+  transition:opacity .2s;
+}
+.btn-print:hover{opacity:.9;}
+.btn-back{
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 18px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);
+  cursor:pointer;transition:all .2s;
+}
+.btn-back:hover{border-color:#999;color:#333;}
+
+/* TICKET CARD */
+.ticket{
+  width:100%;max-width:420px;
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 12px 48px rgba(0,0,0,.15);
+  position:relative;
+}
+
+/* Header strip */
+.ticket-header{
+  background:linear-gradient(135deg,#0A0C12,#1A1E2E);
+  padding:20px 24px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.ticket-header .brand{
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  color:#fff;letter-spacing:2px;
+  line-height:1;
+}
+.ticket-header .brand span{color:var(--gold);}
+.ticket-header .logo-sq{
+  width:36px;height:36px;background:var(--gold);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:700;color:#000;flex-shrink:0;
+}
+.ticket-header .tagline{
+  font-size:11px;color:rgba(255,255,255,.4);
+  letter-spacing:1px;margin-top:2px;
+  font-family:'DM Sans',sans-serif;
+}
+
+/* QR Section */
+.qr-section{
+  background:#FAFAFA;
+  padding:24px;
+  text-align:center;
+  border-bottom:1px dashed var(--border);
+  position:relative;
+}
+.qr-section::before,.qr-section::after{
+  content:'';
+  position:absolute;bottom:-12px;
+  width:24px;height:24px;border-radius:50%;
+  background:#E8E8E8;z-index:2;
+}
+.qr-section::before{left:-12px;}
+.qr-section::after{right:-12px;}
+.qr-box{
+  width:150px;height:150px;
+  margin:0 auto 12px;
+  background:#fff;
+  border:2px solid var(--border);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.qr-box .qr-placeholder{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.qr-box svg{width:100px;height:100px;}
+.qr-label{
+  font-size:11px;color:var(--muted);
+  letter-spacing:.5px;font-weight:600;text-transform:uppercase;
+}
+
+/* Payment strip */
+.payment-strip{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  padding:10px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.payment-strip .pay-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(0,0,0,.6);}
+.payment-strip .pay-amount{
+  font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#000;
+}
+
+/* Receipt body */
+.receipt-body{padding:20px 24px;}
+.receipt-title{
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;
+}
+.receipt-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid #F0F0F0;
+}
+.receipt-row:last-child{border-bottom:none;}
+.receipt-row .rr-label{font-size:12px;color:var(--muted);font-weight:500;}
+.receipt-row .rr-value{
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);
+  text-align:right;
+}
+.receipt-row.highlight .rr-value{color:#000;font-weight:600;font-size:14px;}
+.receipt-row.gst-row .rr-value{color:#888;}
+
+/* Location block */
+.location-block{
+  margin:16px 0;
+  background:var(--light);
+  border-radius:10px;
+  padding:14px;
+}
+.location-block .loc-title{
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.loc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.loc-item{text-align:center;}
+.loc-item .loc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.loc-item .loc-value{
+  font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;
+  color:#000;margin-top:2px;
+}
+
+/* IDs block */
+.ids-block{margin:12px 0;}
+.id-row{
+  display:flex;justify-content:space-between;padding:8px 12px;
+  background:var(--light);border-radius:8px;margin-bottom:6px;
+}
+.id-row .id-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.id-row .id-value{
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  color:#222;letter-spacing:.5px;
+}
+
+/* Vehicle */
+.vehicle-block{
+  text-align:center;
+  background:#FFF9EC;
+  border:1px solid rgba(255,184,0,.3);
+  border-radius:8px;padding:10px;margin:12px 0;
+}
+.vehicle-block .v-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);}
+.vehicle-block .v-num{
+  font-family:'DM Mono',monospace;font-size:22px;font-weight:600;
+  color:#333;letter-spacing:4px;margin-top:4px;
+}
+
+/* Quote */
+.quote-footer{
+  background:linear-gradient(135deg,#0A0C12,#1A1E2E);
+  padding:16px 24px;
+  text-align:center;
+}
+.quote-footer .quote-text{
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;
+  color:var(--gold);letter-spacing:.5px;
+  font-style:italic;
+}
+.quote-footer .quote-sub{
+  font-size:11px;color:rgba(255,255,255,.3);
+  margin-top:6px;letter-spacing:1px;text-transform:uppercase;
+}
+
+/* Tear line */
+.tear-line{
+  border:none;border-top:2px dashed var(--border);
+  margin:0;position:relative;
+}
+
+@media print{
+  body{background:#fff;padding:0;}
+  .screen-actions{display:none;}
+  .ticket{box-shadow:none;border-radius:0;max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="screen-actions">
+  <button class="btn-back" onclick="goBack()">← Back</button>
+  <button class="btn-print" onclick="window.print()">🖨 Print Ticket</button>
+</div>
+
+<div class="ticket">
+  <!-- Header -->
+  <div class="ticket-header">
+    <div class="logo-sq">🅿</div>
+    <div>
+      <div class="brand">MALL <span>PARK 360</span></div>
+      <div class="tagline">OFFICIAL PARKING RECEIPT</div>
+    </div>
+  </div>
+
+  <!-- QR Section -->
+  <div class="qr-section">
+    <div class="qr-box">
+      <!-- QR code placeholder — connect payment gateway here -->
+      <div class="qr-placeholder">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- Corner squares -->
+          <rect x="5" y="5" width="30" height="30" rx="3" fill="none" stroke="#ccc" stroke-width="3"/>
+          <rect x="12" y="12" width="16" height="16" rx="1" fill="#ddd"/>
+          <rect x="65" y="5" width="30" height="30" rx="3" fill="none" stroke="#ccc" stroke-width="3"/>
+          <rect x="72" y="12" width="16" height="16" rx="1" fill="#ddd"/>
+          <rect x="5" y="65" width="30" height="30" rx="3" fill="none" stroke="#ccc" stroke-width="3"/>
+          <rect x="12" y="72" width="16" height="16" rx="1" fill="#ddd"/>
+          <!-- Dots pattern -->
+          <rect x="42" y="10" width="6" height="6" fill="#ddd"/>
+          <rect x="52" y="10" width="6" height="6" fill="#ddd"/>
+          <rect x="42" y="20" width="6" height="6" fill="#ddd"/>
+          <rect x="10" y="42" width="6" height="6" fill="#ddd"/>
+          <rect x="20" y="42" width="6" height="6" fill="#ddd"/>
+          <rect x="10" y="52" width="6" height="6" fill="#ddd"/>
+          <rect x="42" y="42" width="16" height="16" rx="2" fill="#FFB800" opacity=".3"/>
+          <rect x="42" y="65" width="6" height="6" fill="#ddd"/>
+          <rect x="52" y="75" width="6" height="6" fill="#ddd"/>
+          <rect x="65" y="42" width="6" height="6" fill="#ddd"/>
+          <rect x="75" y="52" width="6" height="6" fill="#ddd"/>
+          <rect x="85" y="42" width="6" height="6" fill="#ddd"/>
+          <rect x="85" y="52" width="6" height="6" fill="#ddd"/>
+          <rect x="65" y="65" width="6" height="6" fill="#ddd"/>
+          <rect x="75" y="75" width="6" height="6" fill="#ddd"/>
+          <rect x="85" y="65" width="6" height="6" fill="#ddd"/>
+          <rect x="85" y="75" width="6" height="6" fill="#ddd"/>
+        </svg>
+      </div>
+    </div>
+    <div class="qr-label">Scan to Pay (Coming Soon)</div>
+  </div>
+
+  <!-- Payment Amount -->
+  <div class="payment-strip">
+    <div class="pay-label">Total Payable</div>
+    <div class="pay-amount" id="payAmount">₹118.00</div>
+  </div>
+
+  <!-- Receipt Body -->
+  <div class="receipt-body">
+    <div class="receipt-title">Payment Summary</div>
+
+    <div class="receipt-row">
+      <span class="rr-label">Parking Charge</span>
+      <span class="rr-value" id="baseAmount">₹100.00</span>
+    </div>
+    <div class="receipt-row gst-row">
+      <span class="rr-label">GST (18%)</span>
+      <span class="rr-value" id="gstAmount">₹18.00</span>
+    </div>
+    <div class="receipt-row highlight">
+      <span class="rr-label" style="font-weight:700;color:#000;">Total Amount</span>
+      <span class="rr-value" id="totalAmount">₹118.00</span>
+    </div>
+
+    <hr class="tear-line" style="margin:14px 0;">
+
+    <!-- Parking Location -->
+    <div class="location-block">
+      <div class="loc-title">📍 Parking Location</div>
+      <div class="loc-grid">
+        <div class="loc-item">
+          <div class="loc-label">Floor</div>
+          <div class="loc-value" id="locFloor">—</div>
+        </div>
+        <div class="loc-item">
+          <div class="loc-label">Pillar</div>
+          <div class="loc-value" id="locPillar">—</div>
+        </div>
+        <div class="loc-item">
+          <div class="loc-label">Slot</div>
+          <div class="loc-value" id="locSlot">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDs -->
+    <div class="ids-block">
+      <div class="id-row">
+        <span class="id-label">Ticket ID</span>
+        <span class="id-value" id="ticketId">MP-2026-00001</span>
+      </div>
+      <div class="id-row">
+        <span class="id-label">Payment Ref</span>
+        <span class="id-value" id="paymentNumber">PAY-20260413-0001</span>
+      </div>
+      <div class="id-row">
+        <span class="id-label">Date &amp; Time</span>
+        <span class="id-value" id="createdAt">—</span>
+      </div>
+    </div>
+
+    <!-- Vehicle -->
+    <div class="vehicle-block">
+      <div class="v-label">🚗 Vehicle Registration (Last 4)</div>
+      <div class="v-num" id="vehicleNum">— — — —</div>
+    </div>
+  </div>
+
+  <!-- Quote Footer -->
+  <div class="quote-footer">
+    <div class="quote-text">"Your car is our responsibility now."</div>
+    <div class="quote-sub">Mall Park 360 &nbsp;•&nbsp; Managed Parking Solutions</div>
+  </div>
+</div>
+
+<script>
+function goBack(){
+  if(document.referrer) history.back();
+  else window.location.href='/attendant';
+}
+
+function fmt(n){ return '₹'+parseFloat(n).toFixed(2); }
+
+function loadTicket(){
+  // Try localStorage first (from attendant page)
+  const stored = localStorage.getItem('mp360_ticket');
+  const params  = new URLSearchParams(window.location.search);
+  const tid     = params.get('id');
+
+  if(stored){
+    const t = JSON.parse(stored);
+    if(!tid || t.ticket_id === tid){
+      renderTicket(t);
+      return;
+    }
+  }
+
+  // Fetch from API
+  if(tid){
+    const TOKEN = localStorage.getItem('mp360_token');
+    fetch('/api/tickets/'+tid, {headers:{'Authorization':'Bearer '+TOKEN}})
+      .then(r=>r.json())
+      .then(t=>{ if(t.ticket_id) renderTicket(t); });
+  }
+}
+
+function renderTicket(t){
+  document.getElementById('payAmount').textContent       = fmt(t.total_amount);
+  document.getElementById('baseAmount').textContent      = fmt(t.base_amount);
+  document.getElementById('gstAmount').textContent       = fmt(t.gst_amount);
+  document.getElementById('totalAmount').textContent     = fmt(t.total_amount);
+  document.getElementById('locFloor').textContent        = 'B'+Math.abs(t.floor);
+  document.getElementById('locPillar').textContent       = t.pillar;
+  document.getElementById('locSlot').textContent         = String(t.slot_num).padStart(2,'0');
+  document.getElementById('ticketId').textContent        = t.ticket_id;
+  document.getElementById('paymentNumber').textContent   = t.payment_number;
+  document.getElementById('vehicleNum').textContent      = '* * * ' + t.vehicle_last4;
+  document.title = 'Ticket ' + t.ticket_id + ' — Mall Park 360';
+
+  const dt = new Date(t.created_at.replace(' ','T'));
+  document.getElementById('createdAt').textContent =
+    dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + '  ' +
+    dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+loadTicket();
+</script>
+</body>
+</html>

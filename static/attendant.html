@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendant — Mall Park 360</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{
+  --bg:#0A0C12;--surface:#12151E;--surface2:#181B26;
+  --border:#1E2230;--gold:#FFB800;--gold2:#FF8C00;
+  --teal:#00C9A7;--red:#FF4455;--green:#00D68F;
+  --text:#E8EAF0;--muted:#6B7280;--input-bg:#0D0F18;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,184,0,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,184,0,.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+
+/* TOP BAR */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,12,18,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo-pill{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:1.5px;color:var(--text);text-decoration:none;
+}
+.logo-pill .icon{
+  width:28px;height:28px;background:var(--gold);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#000;font-weight:700;
+}
+.role-tag{
+  background:rgba(154,160,255,.15);color:#9AA0FF;
+  font-size:11px;font-weight:700;letter-spacing:1px;
+  padding:3px 10px;border-radius:20px;text-transform:uppercase;
+}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.timer-box{
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  color:var(--gold);letter-spacing:2px;
+  background:rgba(255,184,0,.08);
+  padding:4px 14px;border-radius:8px;border:1px solid rgba(255,184,0,.2);
+}
+.user-info{font-size:13px;color:var(--muted);}
+.btn-logout{
+  background:transparent;border:1px solid var(--border);
+  border-radius:8px;padding:6px 14px;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);
+  cursor:pointer;transition:all .2s;
+}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* MAIN LAYOUT */
+.main{padding:24px;max-width:1400px;margin:0 auto;}
+
+/* PAGE TITLE */
+.page-title{
+  font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;
+  letter-spacing:1px;margin-bottom:6px;
+}
+.page-title span{color:var(--gold);}
+.page-subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px 20px;
+}
+.stat-card .stat-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.stat-card .stat-value{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;}
+.stat-card.total .stat-value{color:var(--text);}
+.stat-card.reserved .stat-value{color:var(--red);}
+.stat-card.free .stat-value{color:var(--green);}
+
+/* CONFIG PANEL */
+.config-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px 24px;margin-bottom:24px;
+}
+.config-panel h3{
+  font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;
+  letter-spacing:.5px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.config-panel h3 .badge{
+  font-size:11px;background:rgba(255,184,0,.15);color:var(--gold);
+  padding:2px 8px;border-radius:20px;font-weight:600;
+}
+.config-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;}
+.config-field{display:flex;flex-direction:column;gap:6px;min-width:180px;}
+.config-field label{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.config-field select, .config-field input{
+  background:var(--input-bg);border:1.5px solid var(--border);
+  border-radius:8px;padding:10px 14px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+  outline:none;transition:border-color .2s;cursor:pointer;
+}
+.config-field select:focus,.config-field input:focus{border-color:var(--gold);}
+.config-field select option{background:var(--surface);}
+.btn-apply{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:8px;padding:10px 22px;
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:1px;color:#000;cursor:pointer;
+  transition:opacity .2s,transform .15s;white-space:nowrap;
+}
+.btn-apply:hover{opacity:.9;transform:translateY(-1px);}
+.config-info{
+  margin-top:12px;font-size:13px;color:var(--muted);
+  background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.1);
+  border-radius:8px;padding:10px 14px;display:none;
+}
+.config-info.show{display:block;}
+
+/* FLOOR TABS */
+.floor-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.floor-tab{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:8px;padding:8px 18px;
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:.5px;cursor:pointer;transition:all .2s;color:var(--muted);
+}
+.floor-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(255,184,0,.08);}
+.floor-tab:hover:not(.active){border-color:rgba(255,184,0,.3);color:var(--text);}
+
+/* PARKING FLOOR */
+.floor-container{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px;overflow-x:auto;
+}
+.floor-label{
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  color:var(--muted);letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+/* Parking grid */
+.parking-grid{min-width:600px;}
+.lift-row{
+  display:flex;justify-content:space-between;
+  margin-bottom:8px;
+}
+.lift-box{
+  background:rgba(0,201,167,.1);border:1.5px dashed rgba(0,201,167,.4);
+  border-radius:8px;padding:8px 16px;
+  font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--teal);display:flex;align-items:center;gap:6px;
+}
+.pillar-row{
+  display:flex;align-items:center;margin-bottom:6px;gap:4px;
+}
+.pillar-label-cell{
+  width:38px;text-align:center;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  color:var(--muted);letter-spacing:1px;flex-shrink:0;
+}
+.pillar-divider{
+  width:44px;flex-shrink:0;text-align:center;
+  background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);
+  border-radius:6px;padding:6px 4px;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  color:rgba(255,184,0,.5);letter-spacing:.5px;
+}
+.slot-cell{
+  flex:1;min-width:48px;max-width:70px;
+  background:rgba(0,214,143,.08);border:1.5px solid rgba(0,214,143,.25);
+  border-radius:6px;padding:6px 4px;
+  text-align:center;cursor:pointer;
+  transition:all .18s;position:relative;
+}
+.slot-cell:hover{transform:scale(1.05);z-index:2;}
+.slot-cell.reserved{
+  background:rgba(255,68,85,.1);border-color:rgba(255,68,85,.35);
+}
+.slot-cell .slot-num{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  color:var(--green);letter-spacing:.5px;
+}
+.slot-cell.reserved .slot-num{color:var(--red);}
+.slot-cell .slot-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);margin:2px auto 0;
+}
+.slot-cell.reserved .slot-dot{background:var(--red);}
+.slot-cell .slot-vehicle{
+  font-size:9px;color:var(--muted);margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.slots-left,.slots-right{
+  display:flex;gap:4px;flex:1;
+}
+.slots-right{justify-content:flex-end;}
+.slots-left .slot-cell:last-child{border-right:none;}
+
+/* Empty state */
+.empty-state{
+  text-align:center;padding:60px 20px;
+  color:var(--muted);
+}
+.empty-state .icon{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-size:15px;}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;z-index:500;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:32px;width:100%;max-width:380px;
+  transform:scale(.95) translateY(16px);transition:transform .2s;
+}
+.modal-overlay.open .modal{transform:none;}
+.modal h3{
+  font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;
+  margin-bottom:6px;
+}
+.modal .slot-info{
+  font-size:13px;color:var(--muted);margin-bottom:20px;
+}
+.modal .slot-info strong{color:var(--gold);}
+.modal .form-group{margin-bottom:16px;}
+.modal .form-group label{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;}
+.modal .form-group input{
+  width:100%;background:var(--input-bg);border:1.5px solid var(--border);
+  border-radius:8px;padding:12px 14px;
+  font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);
+  letter-spacing:3px;outline:none;transition:border-color .2s;
+}
+.modal .form-group input:focus{border-color:var(--gold);}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.btn-confirm{
+  flex:1;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;border-radius:8px;padding:12px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:1px;color:#000;cursor:pointer;
+  transition:opacity .2s;
+}
+.btn-confirm:hover{opacity:.9;}
+.btn-cancel{
+  background:transparent;border:1px solid var(--border);
+  border-radius:8px;padding:12px 18px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);
+  cursor:pointer;transition:all .2s;
+}
+.btn-cancel:hover{border-color:var(--red);color:var(--red);}
+
+/* Release confirm modal */
+.btn-danger{
+  flex:1;background:rgba(255,68,85,.15);
+  border:1px solid rgba(255,68,85,.3);border-radius:8px;padding:12px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:1px;color:var(--red);cursor:pointer;transition:all .2s;
+}
+.btn-danger:hover{background:rgba(255,68,85,.25);}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:1000;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px 18px;
+  font-size:14px;display:flex;align-items:center;gap:8px;
+  transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.show{transform:none;opacity:1;}
+.toast.success{border-color:rgba(0,214,143,.3);color:var(--green);}
+.toast.error{border-color:rgba(255,68,85,.3);color:var(--red);}
+
+/* Live badge */
+.live-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-right:6px;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
+</style>
+</head>
+<body>
+<!-- TOP BAR -->
+<nav class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo-pill">
+      <span class="icon">🅿</span>MALL PARK <span style="color:var(--gold)">360</span>
+    </a>
+    <span class="role-tag">Lot Attendant</span>
+  </div>
+  <div class="topbar-right">
+    <div class="timer-box" id="timerBox">00:00:00</div>
+    <span class="user-info" id="userName">Loading…</span>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="page-title">Parking Lot <span>Attendant</span></div>
+  <div class="page-subtitle">
+    <span class="live-dot"></span>Live slot management &amp; vehicle tracking
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-label">Total Slots</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card reserved">
+      <div class="stat-label">Reserved</div>
+      <div class="stat-value" id="statReserved">—</div>
+    </div>
+    <div class="stat-card free">
+      <div class="stat-label">Available</div>
+      <div class="stat-value" id="statFree">—</div>
+    </div>
+    <div class="stat-card" style="border-color:rgba(255,184,0,.2);">
+      <div class="stat-label">Active Floors</div>
+      <div class="stat-value" id="statFloors" style="color:var(--gold)">—</div>
+    </div>
+  </div>
+
+  <!-- CONFIG PANEL -->
+  <div class="config-panel">
+    <h3>⚙ Parking Configuration <span class="badge" id="configBadge">Not Set</span></h3>
+    <div class="config-row">
+      <div class="config-field">
+        <label>Slots per Floor</label>
+        <select id="cfgSlots">
+          <option value="">Select slots…</option>
+          <script>for(let i=10;i<=100;i+=5)document.write(`<option value="${i}">${i} slots</option>`)</script>
+        </select>
+      </div>
+      <div class="config-field">
+        <label>Number of Floors (B = Basement)</label>
+        <select id="cfgFloors">
+          <option value="">Select floors…</option>
+          <option value="1">B1 (1 floor)</option>
+          <option value="2">B1–B2 (2 floors)</option>
+          <option value="3">B1–B3 (3 floors)</option>
+          <option value="4">B1–B4 (4 floors)</option>
+          <option value="5">B1–B5 (5 floors)</option>
+        </select>
+      </div>
+      <button class="btn-apply" onclick="applyConfig()">Apply Configuration</button>
+    </div>
+    <div class="config-info" id="configInfo"></div>
+  </div>
+
+  <!-- FLOOR TABS -->
+  <div class="floor-tabs" id="floorTabs"></div>
+
+  <!-- PARKING FLOOR VIEW -->
+  <div class="floor-container" id="floorContainer">
+    <div class="empty-state">
+      <div class="icon">🏗</div>
+      <p>Set parking configuration above to begin managing slots</p>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVE MODAL -->
+<div class="modal-overlay" id="reserveModal">
+  <div class="modal">
+    <h3>🚗 Reserve Slot</h3>
+    <div class="slot-info" id="modalSlotInfo">Floor — / Pillar — / Slot —</div>
+    <div class="form-group">
+      <label>Last 4 Digits of Vehicle Number</label>
+      <input type="text" id="vehicleInput" maxlength="4" placeholder="e.g. 4521"
+             oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('reserveModal')">Cancel</button>
+      <button class="btn-confirm" onclick="confirmReserve()">Generate Ticket →</button>
+    </div>
+  </div>
+</div>
+
+<!-- RELEASE MODAL -->
+<div class="modal-overlay" id="releaseModal">
+  <div class="modal">
+    <h3>🔓 Release Slot</h3>
+    <div class="slot-info" id="releaseSlotInfo">Are you sure you want to release this slot?</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('releaseModal')">Cancel</button>
+      <button class="btn-danger" onclick="confirmRelease()">Release Slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('mp360_token');
+const ROLE  = localStorage.getItem('mp360_role');
+if(!TOKEN || ROLE !== 'attendant'){ window.location.href='/'; }
+
+let allSlots = [];
+let config   = {slots_per_floor:0, num_floors:0};
+let activeFloor = null;
+let pendingSlot = null;
+
+// ── Socket.IO ──
+const socket = io();
+socket.on('connect', () => {});
+socket.on('init', d => { allSlots = d.slots; config = d.config; refresh(); });
+socket.on('slot_update', d => { allSlots = d.slots; refreshGrid(); updateStats(); });
+socket.on('config_update', d => { allSlots = d.slots; config = d.config; refresh(); });
+
+// ── Auth & User ──
+async function loadUser(){
+  const r = await apiFetch('/api/me');
+  if(r){ document.getElementById('userName').textContent = r.name; }
+}
+
+function logout(){
+  apiFetch('/api/logout','POST');
+  localStorage.clear();
+  window.location.href='/';
+}
+
+// ── Timer ──
+const loginTime = Date.now();
+setInterval(() => {
+  const s = Math.floor((Date.now()-loginTime)/1000);
+  const h = String(Math.floor(s/3600)).padStart(2,'0');
+  const m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const sc = String(s%60).padStart(2,'0');
+  document.getElementById('timerBox').textContent = `${h}:${m}:${sc}`;
+},1000);
+
+// ── API ──
+async function apiFetch(url, method='GET', body=null){
+  try{
+    const opts = {method, headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}};
+    if(body) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+// ── Config ──
+async function applyConfig(){
+  const slots = document.getElementById('cfgSlots').value;
+  const floors = document.getElementById('cfgFloors').value;
+  if(!slots || !floors){ showToast('Select slots and floors first','error'); return; }
+  const d = await apiFetch('/api/parking/config','POST',{slots_per_floor:parseInt(slots),num_floors:parseInt(floors)});
+  if(d && d.ok){
+    showToast('Configuration applied!','success');
+    // Fetch and refresh slots and config in real-time
+    const slotData = await apiFetch('/api/parking/slots');
+    if(slotData && slotData.slots){
+      allSlots = slotData.slots;
+      config = slotData.config;
+      activeFloor = null; // Reset floor selection
+      refresh();
+    }
+  } else {
+    showToast(d?.error||'Error applying config','error');
+  }
+}
+
+// ── Refresh ──
+function refresh(){
+  updateStats();
+  buildFloorTabs();
+  if(!activeFloor && config.num_floors > 0) activeFloor = -1;
+  refreshGrid();
+  updateConfigBadge();
+}
+
+function updateStats(){
+  const total = allSlots.length;
+  const reserved = allSlots.filter(s=>s.is_reserved).length;
+  document.getElementById('statTotal').textContent    = total || '—';
+  document.getElementById('statReserved').textContent = reserved || (total?'0':'—');
+  document.getElementById('statFree').textContent     = (total-reserved) || (total?'0':'—');
+  document.getElementById('statFloors').textContent   = config.num_floors || '—';
+}
+
+function updateConfigBadge(){
+  const b = document.getElementById('configBadge');
+  if(config.slots_per_floor > 0){
+    b.textContent = `${config.slots_per_floor} slots × ${config.num_floors} floor(s)`;
+    b.style.background='rgba(0,214,143,.15)';b.style.color='var(--green)';
+    document.getElementById('configInfo').classList.add('show');
+    document.getElementById('configInfo').innerHTML =
+      `✅ Active: <strong>${config.slots_per_floor} slots</strong> per floor across <strong>${config.num_floors}</strong> basement floor(s). `+
+      `Total capacity: <strong>${config.slots_per_floor * config.num_floors}</strong> vehicles.`;
+    document.getElementById('cfgSlots').value  = config.slots_per_floor;
+    document.getElementById('cfgFloors').value = config.num_floors;
+  } else {
+    b.textContent='Not Set';
+    b.style.background='';b.style.color='';
+  }
+}
+
+function buildFloorTabs(){
+  const el = document.getElementById('floorTabs');
+  el.innerHTML='';
+  for(let f=1;f<=config.num_floors;f++){
+    const floor = -f;
+    const btn = document.createElement('button');
+    btn.className = 'floor-tab' + (activeFloor===floor?' active':'');
+    btn.textContent = `B${f} (Floor ${floor})`;
+    btn.onclick = () => { activeFloor=floor; buildFloorTabs(); refreshGrid(); };
+    el.appendChild(btn);
+  }
+}
+
+function refreshGrid(){
+  if(!config.num_floors || allSlots.length===0){
+    document.getElementById('floorContainer').innerHTML=
+      '<div class="empty-state"><div class="icon">🏗</div><p>Set parking configuration above to begin managing slots</p></div>';
+    return;
+  }
+  if(!activeFloor) activeFloor=-1;
+  const floorSlots = allSlots.filter(s=>s.floor===activeFloor);
+  const pillars = [...new Set(floorSlots.map(s=>s.pillar))].sort();
+  const floorIdx = Math.abs(activeFloor);
+
+  let html = `<div class="floor-label">Basement ${floorIdx} &nbsp;|&nbsp; Floor ${activeFloor}</div>`;
+  html += `<div class="parking-grid">`;
+  html += `<div class="lift-row">
+    <div class="lift-box">🛗 Lift A</div>
+    <div class="lift-box">Lift B 🛗</div>
+  </div>`;
+
+  for(const pillar of pillars){
+    const ps = floorSlots.filter(s=>s.pillar===pillar).sort((a,b)=>a.slot_num-b.slot_num);
+    const leftSlots  = ps.slice(0,5);
+    const rightSlots = ps.slice(5,10);
+
+    html += `<div class="pillar-row">
+      <div class="pillar-label-cell">${pillar}</div>
+      <div class="slots-left">
+        ${leftSlots.map(s=>slotCell(s)).join('')}
+      </div>
+      <div class="pillar-divider">█ ${pillar}</div>
+      <div class="slots-right">
+        ${rightSlots.map(s=>slotCell(s)).join('')}
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+  document.getElementById('floorContainer').innerHTML = html;
+}
+
+function slotCell(s){
+  const cls = s.is_reserved?'slot-cell reserved':'slot-cell';
+  const label = `${activeFloor}/${s.pillar}/${s.slot_num}`;
+  const veh = s.vehicle_last4 ? `****${s.vehicle_last4}` : '';
+  return `<div class="${cls}" onclick="slotClick(${s.floor},'${s.pillar}',${s.slot_num},${s.is_reserved})"
+    title="${s.is_reserved?'Reserved - '+veh:'Available'}">
+    <div class="slot-num">${String(s.slot_num).padStart(2,'0')}</div>
+    <div class="slot-dot"></div>
+    <div class="slot-vehicle">${veh}</div>
+  </div>`;
+}
+
+// ── Slot Actions ──
+function slotClick(floor, pillar, slot_num, isReserved){
+  pendingSlot = {floor, pillar, slot_num};
+  if(!isReserved){
+    document.getElementById('modalSlotInfo').innerHTML =
+      `Floor <strong>${floor}</strong> &nbsp;/&nbsp; Pillar <strong>${pillar}</strong> &nbsp;/&nbsp; Slot <strong>${String(slot_num).padStart(2,'0')}</strong>`;
+    document.getElementById('vehicleInput').value='';
+    openModal('reserveModal');
+  } else {
+    const s = allSlots.find(x=>x.floor===floor&&x.pillar===pillar&&x.slot_num===slot_num);
+    document.getElementById('releaseSlotInfo').innerHTML =
+      `Release Floor <strong>${floor}</strong> / Pillar <strong>${pillar}</strong> / Slot <strong>${String(slot_num).padStart(2,'0')}</strong>`+
+      (s?.vehicle_last4?` &nbsp;(<em>****${s.vehicle_last4}</em>)`:'');
+    openModal('releaseModal');
+  }
+}
+
+async function confirmReserve(){
+  const v = document.getElementById('vehicleInput').value.trim();
+  if(v.length!==4){ showToast('Enter exactly 4 digits','error'); return; }
+  const d = await apiFetch('/api/parking/slots/reserve','POST',{...pendingSlot,vehicle_last4:v});
+  if(d && d.ok){
+    closeModal('reserveModal');
+    showToast('Slot reserved! Generating ticket…','success');
+    // Store ticket and navigate
+    localStorage.setItem('mp360_ticket', JSON.stringify(d.ticket));
+    setTimeout(()=>window.open('/ticket?id='+d.ticket.ticket_id,'_blank'),500);
+  } else {
+    showToast(d?.error||'Error reserving slot','error');
+  }
+}
+
+async function confirmRelease(){
+  const d = await apiFetch('/api/parking/slots/release','POST',pendingSlot);
+  closeModal('releaseModal');
+  if(d && d.ok) showToast('Slot released','success');
+  else showToast(d?.error||'Error','error');
+}
+
+// ── Modals ──
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg,type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = (type==='success'?'✓ ':'✕ ') + msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── Init ──
+loadUser();
+apiFetch('/api/parking/slots').then(d=>{
+  if(d){ allSlots=d.slots; config=d.config; refresh(); }
+});
+</script>
+</body>
+</html>

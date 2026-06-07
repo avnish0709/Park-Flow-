@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervisor — Mall Park 360</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0A0C12;--surface:#12151E;--surface2:#181B26;
+  --border:#1E2230;--gold:#FFB800;--gold2:#FF8C00;
+  --teal:#00C9A7;--red:#FF4455;--green:#00D68F;
+  --purple:#9AA0FF;
+  --text:#E8EAF0;--muted:#6B7280;--input-bg:#0D0F18;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,184,0,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,184,0,.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;}
+
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,12,18,.95);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo-pill{display:flex;align-items:center;gap:8px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:1.5px;color:var(--text);text-decoration:none;}
+.logo-pill .icon{width:28px;height:28px;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#000;font-weight:700;}
+.role-tag{background:rgba(255,184,0,.15);color:var(--gold);font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.user-info{font-size:13px;color:var(--muted);}
+.btn-logout{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
+
+.main{padding:24px;max-width:1400px;margin:0 auto;}
+.page-title{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;letter-spacing:1px;margin-bottom:4px;}
+.page-title span{color:var(--gold);}
+.page-subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;
+}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.kpi-card.income::before{background:linear-gradient(90deg,var(--gold),var(--gold2));}
+.kpi-card.reserved::before{background:var(--red);}
+.kpi-card.available::before{background:var(--green);}
+.kpi-card.total::before{background:var(--purple);}
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.kpi-value{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;line-height:1;}
+.kpi-card.income .kpi-value{color:var(--gold);}
+.kpi-card.reserved .kpi-value{color:var(--red);}
+.kpi-card.available .kpi-value{color:var(--green);}
+.kpi-card.total .kpi-value{color:var(--purple);}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:6px;}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:768px){.charts-row{grid-template-columns:1fr;}}
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.chart-card h3{
+  font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;
+  letter-spacing:.5px;margin-bottom:4px;
+}
+.chart-card .ch-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.chart-wrap{position:relative;height:220px;}
+
+/* TODAY INCOME */
+.income-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px 24px;margin-bottom:24px;
+}
+.income-panel h3{
+  font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;
+  letter-spacing:.5px;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.income-row{display:flex;gap:16px;flex-wrap:wrap;}
+.income-item{
+  flex:1;min-width:140px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:16px;text-align:center;
+}
+.income-item .il-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.income-item .il-value{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;}
+.income-item.base .il-value{color:var(--text);}
+.income-item.gst .il-value{color:var(--muted);}
+.income-item.total .il-value{color:var(--gold);}
+.income-item.count .il-value{color:var(--teal);}
+
+/* EMERGENCY PANEL */
+.emergency-panel{
+  background:var(--surface);border:1px solid rgba(255,68,85,.2);
+  border-radius:12px;padding:20px 24px;margin-bottom:24px;
+}
+.emergency-panel h3{
+  font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;
+  color:var(--red);letter-spacing:.5px;margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.emergency-panel .ep-desc{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.emergency-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.btn-emergency{
+  padding:10px 20px;border-radius:8px;
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:1px;cursor:pointer;transition:all .2s;
+}
+.btn-reserve-all{
+  background:rgba(255,68,85,.15);border:1px solid rgba(255,68,85,.3);color:var(--red);
+}
+.btn-reserve-all:hover{background:rgba(255,68,85,.25);}
+.btn-release-all{
+  background:rgba(0,214,143,.15);border:1px solid rgba(0,214,143,.3);color:var(--green);
+}
+.btn-release-all:hover{background:rgba(0,214,143,.25);}
+
+/* FLOOR VIEW */
+.section-title{
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  letter-spacing:.5px;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.floor-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.floor-tab{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:8px 18px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;color:var(--muted);}
+.floor-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(255,184,0,.08);}
+
+.floor-container{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;overflow-x:auto;}
+.parking-grid{min-width:600px;}
+.lift-row{display:flex;justify-content:space-between;margin-bottom:8px;}
+.lift-box{background:rgba(0,201,167,.1);border:1.5px dashed rgba(0,201,167,.4);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--teal);display:flex;align-items:center;gap:6px;}
+.pillar-row{display:flex;align-items:center;margin-bottom:6px;gap:4px;}
+.pillar-label-cell{width:38px;text-align:center;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:1px;flex-shrink:0;}
+.pillar-divider{width:44px;flex-shrink:0;text-align:center;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);border-radius:6px;padding:6px 4px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:rgba(255,184,0,.5);letter-spacing:.5px;}
+.slot-cell{flex:1;min-width:48px;max-width:70px;background:rgba(0,214,143,.08);border:1.5px solid rgba(0,214,143,.25);border-radius:6px;padding:6px 4px;text-align:center;cursor:pointer;transition:all .18s;}
+.slot-cell:hover{transform:scale(1.05);z-index:2;}
+.slot-cell.reserved{background:rgba(255,68,85,.1);border-color:rgba(255,68,85,.35);}
+.slot-cell .slot-num{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--green);letter-spacing:.5px;}
+.slot-cell.reserved .slot-num{color:var(--red);}
+.slot-cell .slot-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin:2px auto 0;}
+.slot-cell.reserved .slot-dot{background:var(--red);}
+.slot-cell .slot-vehicle{font-size:9px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.slots-left,.slots-right{display:flex;gap:4px;flex:1;}
+.slots-right{justify-content:flex-end;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:10px;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:360px;transform:scale(.95);transition:transform .2s;}
+.modal-overlay.open .modal{transform:none;}
+.modal h3{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px;}
+.modal p{font-size:14px;color:var(--muted);margin-bottom:20px;}
+.modal-actions{display:flex;gap:10px;}
+.btn-confirm-danger{flex:1;background:rgba(255,68,85,.2);border:1px solid rgba(255,68,85,.4);border-radius:8px;padding:11px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--red);cursor:pointer;transition:all .2s;}
+.btn-confirm-danger:hover{background:rgba(255,68,85,.3);}
+.btn-confirm-success{flex:1;background:rgba(0,214,143,.15);border:1px solid rgba(0,214,143,.3);border-radius:8px;padding:11px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--green);cursor:pointer;transition:all .2s;}
+.btn-confirm-success:hover{background:rgba(0,214,143,.25);}
+.btn-cancel{background:transparent;border:1px solid var(--border);border-radius:8px;padding:11px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);cursor:pointer;transition:all .2s;}
+.btn-cancel:hover{border-color:var(--muted);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:14px;display:flex;align-items:center;gap:8px;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{transform:none;opacity:1;}
+.toast.success{border-color:rgba(0,214,143,.3);color:var(--green);}
+.toast.error{border-color:rgba(255,68,85,.3);color:var(--red);}
+.toast.warning{border-color:rgba(255,184,0,.3);color:var(--gold);}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo-pill">
+      <span class="icon">🅿</span>MALL PARK <span style="color:var(--gold)">360</span>
+    </a>
+    <span class="role-tag">⭐ Supervisor</span>
+  </div>
+  <div class="topbar-right">
+    <span class="live-dot"></span>
+    <span class="user-info" id="userName">Loading…</span>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-title">Parking <span>Supervisor</span></div>
+  <div class="page-subtitle">Analytics, monitoring &amp; emergency controls</div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card income">
+      <div class="kpi-label">Today's Revenue</div>
+      <div class="kpi-value" id="kpiIncome">₹—</div>
+      <div class="kpi-sub" id="kpiIncomeCount">— transactions</div>
+    </div>
+    <div class="kpi-card reserved">
+      <div class="kpi-label">Reserved Slots</div>
+      <div class="kpi-value" id="kpiReserved">—</div>
+      <div class="kpi-sub" id="kpiOccupancy">— % occupancy</div>
+    </div>
+    <div class="kpi-card available">
+      <div class="kpi-label">Available Slots</div>
+      <div class="kpi-value" id="kpiAvailable">—</div>
+      <div class="kpi-sub">Ready for vehicles</div>
+    </div>
+    <div class="kpi-card total">
+      <div class="kpi-label">Total Capacity</div>
+      <div class="kpi-value" id="kpiTotal">—</div>
+      <div class="kpi-sub" id="kpiFloors">— floors active</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>📈 Last 7 Days — Revenue</h3>
+      <div class="ch-sub">Daily income in INR (incl. GST)</div>
+      <div class="chart-wrap"><canvas id="incomeChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>📊 Last 7 Days — Occupancy</h3>
+      <div class="ch-sub">Daily average occupancy rate (%)</div>
+      <div class="chart-wrap"><canvas id="occupancyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TODAY INCOME -->
+  <div class="income-panel">
+    <h3>💰 Today's Income Breakdown</h3>
+    <div class="income-row">
+      <div class="income-item base">
+        <div class="il-label">Base Charges</div>
+        <div class="il-value" id="todayBase">₹—</div>
+      </div>
+      <div class="income-item gst">
+        <div class="il-label">GST (18%)</div>
+        <div class="il-value" id="todayGST">₹—</div>
+      </div>
+      <div class="income-item total">
+        <div class="il-label">Total Income</div>
+        <div class="il-value" id="todayTotal">₹—</div>
+      </div>
+      <div class="income-item count">
+        <div class="il-label">Vehicles Parked</div>
+        <div class="il-value" id="todayCount">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY -->
+  <div class="emergency-panel">
+    <h3>⚠ Emergency Controls</h3>
+    <p class="ep-desc">Use these controls only in case of emergency. Actions affect all parking slots across all floors.</p>
+    <div class="emergency-btns">
+      <button class="btn-emergency btn-reserve-all" onclick="openConfirm('reserve')">🔴 Reserve All Slots</button>
+      <button class="btn-emergency btn-release-all" onclick="openConfirm('release')">🟢 Release All Slots</button>
+    </div>
+  </div>
+
+  <!-- SLOT MONITOR -->
+  <div class="section-title">
+    🅿 Real-Time Slot Monitor
+    <span class="live-dot" style="margin-left:4px;"></span>
+  </div>
+  <div class="floor-tabs" id="floorTabs"></div>
+  <div class="floor-container" id="floorContainer">
+    <div class="empty-state"><div class="icon">⏳</div><p>Waiting for attendant to configure parking slots</p></div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmTitle">Confirm Action</h3>
+    <p id="confirmDesc">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button id="confirmBtn" onclick="executeEmergency()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('mp360_token');
+const ROLE  = localStorage.getItem('mp360_role');
+if(!TOKEN || ROLE !== 'supervisor'){ window.location.href='/'; }
+
+let allSlots=[], config={}, activeFloor=null, pendingAction=null;
+let incomeChart=null, occupancyChart=null;
+
+const socket = io();
+socket.on('init', d=>{ allSlots=d.slots; config=d.config; refresh(); });
+socket.on('slot_update', d=>{ allSlots=d.slots; refreshGrid(); updateKPI(); });
+socket.on('config_update', d=>{ allSlots=d.slots; config=d.config; refresh(); });
+
+async function apiFetch(url,method='GET',body=null){
+  try{
+    const opts={method,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}};
+    if(body) opts.body=JSON.stringify(body);
+    const r=await fetch(url,opts);
+    return await r.json();
+  }catch(e){return null;}
+}
+
+async function loadUser(){
+  const r=await apiFetch('/api/me');
+  if(r) document.getElementById('userName').textContent=r.name;
+}
+function logout(){ apiFetch('/api/logout','POST'); localStorage.clear(); window.location.href='/'; }
+
+function fmt(n){ return '₹'+parseFloat(n||0).toFixed(2); }
+
+function refresh(){
+  updateKPI();
+  buildFloorTabs();
+  if(!activeFloor && config.num_floors>0) activeFloor=-1;
+  refreshGrid();
+}
+
+function updateKPI(){
+  const total=allSlots.length;
+  const reserved=allSlots.filter(s=>s.is_reserved).length;
+  const available=total-reserved;
+  const occ=total>0?Math.round(reserved/total*100):0;
+  document.getElementById('kpiReserved').textContent=reserved||'—';
+  document.getElementById('kpiAvailable').textContent=available||(total?'0':'—');
+  document.getElementById('kpiTotal').textContent=total||'—';
+  document.getElementById('kpiOccupancy').textContent=total?`${occ}% occupancy`:'No slots configured';
+  document.getElementById('kpiFloors').textContent=config.num_floors?`${config.num_floors} floor(s) active`:'Not configured';
+}
+
+async function loadStats(){
+  const [income,occ,today]=await Promise.all([
+    apiFetch('/api/stats/income'),
+    apiFetch('/api/stats/occupancy'),
+    apiFetch('/api/stats/today')
+  ]);
+
+  if(today){
+    document.getElementById('kpiIncome').textContent=fmt(today.total);
+    document.getElementById('kpiIncomeCount').textContent=`${today.count} transaction(s)`;
+    document.getElementById('todayBase').textContent=fmt(today.base);
+    document.getElementById('todayGST').textContent=fmt(today.gst);
+    document.getElementById('todayTotal').textContent=fmt(today.total);
+    document.getElementById('todayCount').textContent=today.count;
+  }
+
+  const chartDefaults={
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#6B7280',font:{family:'DM Sans',size:11}}},
+      y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#6B7280',font:{family:'DM Sans',size:11}}}
+    }
+  };
+
+  if(income && incomeChart===null){
+    const ctx=document.getElementById('incomeChart').getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,0,220);
+    grad.addColorStop(0,'rgba(255,184,0,.3)');
+    grad.addColorStop(1,'rgba(255,184,0,.02)');
+    incomeChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:income.labels,
+        datasets:[{data:income.values,backgroundColor:grad,borderColor:'rgba(255,184,0,.8)',borderWidth:1.5,borderRadius:4}]
+      },
+      options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>'₹'+v}}}}
+    });
+  }
+
+  if(occ && occupancyChart===null){
+    const ctx2=document.getElementById('occupancyChart').getContext('2d');
+    const grad2=ctx2.createLinearGradient(0,0,0,220);
+    grad2.addColorStop(0,'rgba(0,201,167,.3)');
+    grad2.addColorStop(1,'rgba(0,201,167,.02)');
+    occupancyChart=new Chart(ctx2,{
+      type:'line',
+      data:{
+        labels:occ.labels,
+        datasets:[{data:occ.values,fill:true,backgroundColor:grad2,borderColor:'rgba(0,201,167,.9)',borderWidth:2,pointBackgroundColor:'rgba(0,201,167,1)',pointRadius:4,tension:.4}]
+      },
+      options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,ticks:{...chartDefaults.scales.y.ticks,callback:v=>v+'%'},max:100,min:0}}}
+    });
+  }
+}
+
+function buildFloorTabs(){
+  const el=document.getElementById('floorTabs');
+  el.innerHTML='';
+  for(let f=1;f<=config.num_floors;f++){
+    const floor=-f;
+    const btn=document.createElement('button');
+    btn.className='floor-tab'+(activeFloor===floor?' active':'');
+    btn.textContent=`B${f} (Floor ${floor})`;
+    btn.onclick=()=>{ activeFloor=floor; buildFloorTabs(); refreshGrid(); };
+    el.appendChild(btn);
+  }
+}
+
+function refreshGrid(){
+  if(!config.num_floors||allSlots.length===0){
+    document.getElementById('floorContainer').innerHTML=
+      '<div class="empty-state"><div class="icon">⏳</div><p>Waiting for attendant to configure parking slots</p></div>';
+    return;
+  }
+  if(!activeFloor) activeFloor=-1;
+  const floorSlots=allSlots.filter(s=>s.floor===activeFloor);
+  const pillars=[...new Set(floorSlots.map(s=>s.pillar))].sort();
+  const fi=Math.abs(activeFloor);
+  let html=`<div style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:14px;">BASEMENT ${fi} &nbsp;|&nbsp; FLOOR ${activeFloor} &nbsp;|&nbsp; READ-ONLY VIEW</div>`;
+  html+=`<div class="parking-grid">`;
+  html+=`<div class="lift-row"><div class="lift-box">🛗 Lift A</div><div class="lift-box">Lift B 🛗</div></div>`;
+  for(const p of pillars){
+    const ps=floorSlots.filter(s=>s.pillar===p).sort((a,b)=>a.slot_num-b.slot_num);
+    const L=ps.slice(0,5), R=ps.slice(5,10);
+    html+=`<div class="pillar-row">
+      <div class="pillar-label-cell">${p}</div>
+      <div class="slots-left">${L.map(s=>slotCell(s)).join('')}</div>
+      <div class="pillar-divider">█ ${p}</div>
+      <div class="slots-right">${R.map(s=>slotCell(s)).join('')}</div>
+    </div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('floorContainer').innerHTML=html;
+}
+
+function slotCell(s){
+  const cls=s.is_reserved?'slot-cell reserved':'slot-cell';
+  const veh=s.vehicle_last4?`****${s.vehicle_last4}`:'';
+  return `<div class="${cls}" title="${s.is_reserved?'Reserved '+veh:'Available'}">
+    <div class="slot-num">${String(s.slot_num).padStart(2,'0')}</div>
+    <div class="slot-dot"></div>
+    <div class="slot-vehicle">${veh}</div>
+  </div>`;
+}
+
+// Emergency
+function openConfirm(action){
+  pendingAction=action;
+  if(action==='reserve'){
+    document.getElementById('confirmTitle').textContent='⚠ Reserve All Slots';
+    document.getElementById('confirmDesc').textContent='This will mark all available slots as reserved across all floors. Use only in emergencies.';
+    const b=document.getElementById('confirmBtn');
+    b.className='btn-confirm-danger';b.textContent='Reserve All';
+  } else {
+    document.getElementById('confirmTitle').textContent='🔓 Release All Slots';
+    document.getElementById('confirmDesc').textContent='This will clear all reserved slots across all floors.';
+    const b=document.getElementById('confirmBtn');
+    b.className='btn-confirm-success';b.textContent='Release All';
+  }
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeModal(){ document.getElementById('confirmModal').classList.remove('open'); }
+async function executeEmergency(){
+  closeModal();
+  const btn = document.getElementById('confirmBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing...';
+  
+  try {
+    const url = pendingAction === 'reserve' ? '/api/parking/slots/reserve-all' : '/api/parking/slots/release-all';
+    const actionName = pendingAction === 'reserve' ? 'Reserve' : 'Release';
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      showToast(`Error: ${errorData.error || 'Operation failed'}`, 'error');
+      return;
+    }
+    
+    const data = await response.json();
+    if (data && data.ok) {
+      const message = pendingAction === 'reserve' ? 'All slots reserved successfully' : 'All slots released successfully';
+      const type = pendingAction === 'reserve' ? 'warning' : 'success';
+      showToast(message, type);
+      
+      // Refresh slots immediately without page reload
+      await apiFetch('/api/parking/slots').then(d=>{ 
+        if(d){ 
+          allSlots=d.slots; 
+          config=d.config; 
+          refresh(); 
+        } 
+      });
+    } else {
+      showToast(`Error: ${data?.error || 'Operation failed'}`, 'error');
+    }
+  } catch (error) {
+    showToast(`Error: ${error.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+let toastTimer;
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=(type==='success'?'✓ ':type==='warning'?'⚠ ':'✕ ')+msg;
+  t.className=`toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// Init
+loadUser();
+loadStats();
+setInterval(loadStats, 30000);
+apiFetch('/api/parking/slots').then(d=>{ if(d){ allSlots=d.slots; config=d.config; refresh(); } });
+</script>
+</body>
+</html>
