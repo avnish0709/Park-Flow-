@@ -134,9 +134,9 @@ Use these credentials to test different roles:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Supervisor |	supervisor@parkflow.com | Supervisor@123 |
-| Officer	| officer@parkflow.com | Officer@123 |
-| Attendant	| attendant@parkflow.com	| Attendant@123 |
+| Supervisor | supervisor@parkflow.com | Supervisor@123 |
+| Officer | officer@parkflow.com | Officer@123 |
+| Attendant | attendant@parkflow.com | Attendant@123 |
 
 ---
 
