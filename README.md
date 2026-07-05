@@ -1,4 +1,3 @@
-
 # Park Flow
 
 A comprehensive parking management system designed for shopping malls with role-based dashboards for *Parking Supervisors*, *Parking Officers*, and *Parking Lot Attendants*. 
@@ -40,7 +39,7 @@ A comprehensive parking management system designed for shopping malls with role-
 ## Tech Stack
 
 | Component | Technology |
-|-----------|-----------|
+|-----------|----------|
 | **Backend** | Python 3, Flask, Flask-SocketIO |
 | **Frontend** | HTML5, CSS3, JavaScript |
 | **Database** | SQLite3 |
@@ -55,14 +54,14 @@ A comprehensive parking management system designed for shopping malls with role-
 ## Project Structure
 
 ```bash
-Park-FLow/
+Park-Flow/
 │
 ├── app.py                  # Main Flask application
 ├── Requirements            # Python dependencies
 ├── Setup                   # Installation scripts 
 ├── Contribution.md         # Contribution 
 ├── LICENSE                 # MIT License
-├── mallpark360.db          # SQLite database 
+├── parkflow.db             # SQLite database 
 │
 ├── static/                 # Frontend files
 │   ├── index.html          # Login page
@@ -89,7 +88,7 @@ Park-FLow/
 
 ```bash
 git clone https://github.com/avnish0709/Park-Flow-.git
-cd Mall-Park-360
+cd Park-Flow-
 ```
 
 ### Step 2: Create Virtual Environment
@@ -135,9 +134,9 @@ Use these credentials to test different roles:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Supervisor |	supervisor@mallpark360.com | Supervisor@123 |
-| Officer	| officer@mallpark360.com | Officer@123 |
-| Attendant	| attendant@mallpark360.com	| Attendant@123 |
+| Supervisor |	supervisor@parkflow.com | Supervisor@123 |
+| Officer	| officer@parkflow.com | Officer@123 |
+| Attendant	| attendant@parkflow.com	| Attendant@123 |
 
 ---
 
@@ -161,7 +160,7 @@ python3 app.py
 Content-Type: application/json
 
 {
-  "email": "supervisor@mallpark360.com",
+  "email": "supervisor@parkflow.com",
   "password": "Supervisor@123"
 }
 
@@ -216,7 +215,7 @@ Response:
 {
   "ok": true,
   "ticket": {
-    "ticket": "MP-12345",
+    "ticket": "PF-12345",
     "payment": "PAY-1234",
     "total": 118
   }
@@ -371,7 +370,7 @@ CREATE TABLE config(
 ## Changelog
 
 ### Added
-- Initial release of MallPark 360
+- Initial release of Park Flow
 - Attendant dashboard for parking operations
 - Officer dashboard with reports
 - Supervisor panel for configuration
@@ -390,62 +389,3 @@ CREATE TABLE config(
 - Entry/exit ticketing
 - Income statistics
 - Occupancy tracking
-
-## How to Contribute
-
-### Reporting Bugs
-
-1. Check if the issue already exists
-2. Use the bug report template
-3. Provide:
-   - Clear description of the bug
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Screenshots (if applicable)
-   - Your environment (Python version, OS, etc.)
-
-### Suggesting Features
-
-1. Check if the feature is already requested
-2. Use the feature request template
-3. Explain the use case and benefits
-4. Provide examples if possible
-
-### Submitting Code
-
-1. **Fork** the repository
-2. **Create a branch**: `git checkout -b feature/your-feature-name`
-3. **Follow code style**:
-   - Backend: Follow PEP 8
-   - Frontend: Use consistent naming and formatting
-4. **Test your changes** thoroughly
-5. **Commit with clear messages**:
-6. 6. **Push to your fork**: `git push origin feature/your-feature-name`
-7. **Create a Pull Request** with:
-- Clear title and description
-- Reference to related issues
-- Explanation of changes
-
-## Pull Request Process
-
-1. Ensure code follows project conventions
-2. Update documentation as needed
-3. Add tests for new features
-4. Ensure all tests pass
-5. Link any related issues
-6. Wait for review and address feedback
-
-## Development Setup
-
-```bash
-# Backend
-cd backend
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
--uvicorn app.main:app --reload / python -m uvicorn app.main:app --reload
-
-# Frontend
-cd frontend
-npm install
-npm run dev

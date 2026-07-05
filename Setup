@@ -1,6 +1,6 @@
 #!/bin/bash
  
-echo "  🅿  Mall Park 360 — Setup & Run"
+echo "  🅿  Park Flow — Setup & Run"
 
 # Check Python
 if ! command -v python3 &> /dev/null; then
@@ -24,9 +24,9 @@ echo "→ Installing dependencies..."
 pip install -r requirements.txt -q
 
 echo "  Default Login Accounts:"
-echo "  supervisor@mallpark360.com / Supervisor@123"
-echo "  officer@mallpark360.com    / Officer@123"
-echo "  attendant@mallpark360.com  / Attendant@123"
+echo "  supervisor@parkflow.com / Supervisor@123"
+echo "  officer@parkflow.com    / Officer@123"
+echo "  attendant@parkflow.com  / Attendant@123"
 echo "  Open: http://localhost:5000"
 
 
@@ -38,7 +38,7 @@ python3 app.py
 
 @echo off
 echo.
-echo Mall Park 360 - Development Setup
+echo Park Flow - Development Setup
 echo.
 echo Installing backend dependencies...
 pip install -r requirements.txt

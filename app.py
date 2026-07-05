@@ -9,12 +9,12 @@ import math
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static')
-app.config['SECRET_KEY'] = 'mallpark360-secret'
+app.config['SECRET_KEY'] = 'parkflow-secret'
 
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-DB = 'mallpark360.db'
+DB = 'parkflow.db'
 BASE_RATE = 100
 GST = 0.18
 
@@ -90,9 +90,9 @@ def init_db():
         ''')
 
         users = [
-            ('supervisor@mallpark360.com', 'Supervisor@123', 'supervisor', 'Rajesh Kumar'),
-            ('officer@mallpark360.com', 'Officer@123', 'officer', 'Priya Sharma'),
-            ('attendant@mallpark360.com', 'Attendant@123', 'attendant', 'Amit Singh')
+            ('supervisor@parkflow.com', 'Supervisor@123', 'supervisor', 'Rajesh Kumar'),
+            ('officer@parkflow.com', 'Officer@123', 'officer', 'Priya Sharma'),
+            ('attendant@parkflow.com', 'Attendant@123', 'attendant', 'Amit Singh')
         ]
 
         for u in users:
@@ -155,7 +155,7 @@ def seed_demo_data(db):
         )
         VALUES(?,?,?,?,?,?,?,?,?,?)
         ''', (
-            f"MP-2026-{i:04}",
+            f"PF-2026-{i:04}",
             random.choice([-1, -2]),
             random.choice(['A', 'B', 'C']),
             random.randint(1, 10),
@@ -382,7 +382,7 @@ def reserve_slot():
     slot = data['slot_num']
     vehicle = data.get('vehicle', '')
 
-    ticket = f"MP-{random.randint(10000,99999)}"
+    ticket = f"PF-{random.randint(10000,99999)}"
     payment = f"PAY-{random.randint(1000,9999)}"
 
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -624,7 +624,7 @@ if __name__ == '__main__':
 
     init_db()
 
-    print('MallPark360 running on http://localhost:5000')
+    print('Park Flow running on http://localhost:5000')
 
     socketio.run(
         app,

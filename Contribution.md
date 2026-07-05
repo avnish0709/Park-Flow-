@@ -1,6 +1,6 @@
-# Contributing to MallPark 360
+# Contributing to Park Flow
 
-Thank you for your interest in contributing for MallPark360
+Thank you for your interest in contributing to Park Flow
 
 ## How to Contribute
 
